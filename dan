@@ -1,0 +1,233 @@
+/**
+ * Created by Dan Szafir on 9/13/2017.
+ */
+/** sample solution for the programming assignment 2
+ * inspired by http://graphics.cs.wisc.edu/Courses/559-f2015/Examples/QuadCopter/quadcopter.js
+ * students may look at this code, but not copy it verbatim
+ */
+/* pull out implementation from web page - this is just the quadcopter class */
+/* it should define exactly one global thing: the QuadCopter constructor */
+"use strict ";
+
+// this is the "class definition" - always use this with "new"
+// maybe a bad choice to attach it to a context, but seems easier than passing it around
+function QuadCopter(context,x,y,sz,numProps)
+{
+    // these are it's properties
+    this.size = sz || 1;
+    var slider = document.getElementById("myRange");
+  var p = slider.value;
+
+
+	this.propRotationSpeed = 0.4; //how fast the propellers will rotate
+
+	// this is its state
+    this.posX = x || 100;
+    this.posY = y || 100;
+    this.frontPropAngle = 0; //angle propellers start at
+    this.context = context;
+	this.numProps = numProps || 1; //how many propellers
+	this.velocityX = Math.random()*2 - 1;
+	this.velocityY = Math.random()*2 - 1;
+	this.heading = Math.atan2(this.velocityX, -this.velocityY); //negative y since positive y is down
+}
+QuadCopter.prototype.drawBlade = function() {
+    this.context.beginPath();
+    this.context.arc(50,10,100,0,3*Math.PI);
+    this.context.stroke();
+};
+QuadCopter.prototype.drawProp = function() {
+    this.context.save();
+    this.drawBlade();
+    this.drawBlade();
+    this.context.restore();
+    this.context.beginPath();
+    this.context.arc(25,10,5,0,2*Math.PI);
+    this.context.fill()
+};
+QuadCopter.prototype.drawBody = function() {
+    this.context.save();
+    this.context.beginPath();
+    this.context.moveTo(0,25);
+    this.context.lineTo(5,25);
+	this.context.fillStyle = "yellow";
+
+    this.context.arc(10,10,10,0,2*Math.PI);
+	this.context.fillStyle = "green";
+
+    this.context.closePath();
+    this.context.fill();
+    this.context.stroke();
+    this.context.restore();
+};
+QuadCopter.prototype.drawArm = function() {
+    var d = 50;
+    this.context.save();
+    this.context.beginPath();
+
+	this.context.fillStyle = "silver";
+
+    this.context.rotate(this.frontPropAngle);
+    this.drawProp();
+
+    this.context.fill();
+    this.context.strokeStyle = "white";
+    this.context.save();
+    this.context.rotate(this.frontPropAngle);
+
+    this.drawProp();
+
+    this.context.restore();
+
+    this.context.restore();
+};
+QuadCopter.prototype.drawAxis = function(color) {
+      this.context.strokeStyle=color;
+      this.context.beginPath();
+      this.context.arc(10,10,15,0,2*Math.PI);
+
+      this.context.stroke();
+     };
+QuadCopter.prototype.draw = function() {
+    this.context.save();
+
+    this.context.translate(this.posX, this.posY);
+    this.context.rotate(this.heading);
+    this.context.scale(this.size, this.size);
+
+
+
+    this.context.save();
+	this.context.rotate(Math.PI/this.numProps);
+	for(var i = 1; i < this.numProps+1; ++i)
+	{
+		this.context.rotate(Math.PI/(this.numProps/2));
+
+		this.drawArm();
+	}
+    this.context.restore();
+
+	this.context.restore();
+}
+QuadCopter.prototype.update = function() {
+    this.frontPropAngle += this.propRotationSpeed;
+	this.posX += this.velocityX;
+	this.posY += this.velocityY;
+	if (this.posX < 10)
+	{
+		this.posX = 120;
+		this.velocityX *= -1;
+	}
+	if (this.posX > this.context.canvas.clientWidth)
+	{
+		this.posX = this.context.canvas.clientWidth;
+		this.velocityX *= -1;
+	}
+	if (this.posY < 0)
+	{
+		this.posY = 0;
+		this.velocityY *= -1;
+	}
+	if (this.posY > this.context.canvas.clientHeight)
+	{
+		this.posY = this.context.canvas.clientHeight;
+		this.velocityY *= -1;
+	}
+
+
+}
+////////////////////
+
+
+<!DOCTYPE html>
+<html lang="en">
+<!-- Assignment 2 Sample Solution - September, 2017 - Daniel Szafir -->
+<!-- Inspired by example at http://graphics.cs.wisc.edu/Courses/559-f2015/Examples/QuadCopter/quad.html -->
+<!-- Students may refer to this, but not copy it for their assignments -->
+
+	<head>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+	</head>
+	<body>
+      <div class="slidecontainer">
+  <input type="range" min="0.5" max="10" value class="slider" id="myRange">
+</div>
+      Concurrent orbits
+		<canvas id="canvas" width="640"
+		height="480" style="border:1px solid #000;">
+		 Your browser does not support the canvas element.
+
+	<!-- the code for the QuadCopter itself is in a script file -->
+	<!-- that file has the interesting part of the assignment -->
+	<script type="text/javascript" src="Quadcopter.js"></script>
+
+	<script type="text/javascript">
+		$(window).bind("load", function() {
+
+			//Variables representing the canvas and the canvas' context (the context is used for actually drawing on the canvas)
+			var canvas = document.getElementById("canvas");
+			var context = canvas.getContext("2d");
+            var mouseX = 0;
+            var mouseY = 0;
+
+            canvas.addEventListener("mousemove", setMousePosition, false);
+
+            function setMousePosition(e) {
+              mouseX = e.clientX;
+              mouseY = e.clientY;
+            }
+
+			//The quadcopters that we will be drawing on the canvas
+			var quadcopters = [];
+
+			// make some copters
+			quadcopters.push(new QuadCopter(context,50,100,.4, 6));
+			quadcopters.push(new QuadCopter(context,5,20,.5, 6));
+			quadcopters.push(new QuadCopter(context,5,20,1.25, 9));
+
+			//start drawing the first frame
+			requestAnimationFrame(mainLoop);
+
+			//Game Loop
+			function mainLoop() {
+				update();
+				draw();
+
+				requestAnimationFrame(mainLoop); //keep reiterating through this loop
+			}
+
+			//Here is where we would update the state of our game or simulation (e.g., make the copters move).
+			function update() {
+				quadcopters.forEach(function(c) { c.update();})
+			}
+
+			//Draw the scene. Here we simply erase what was previously drawn (e.g., where the copters used to be), then draw it again
+			function draw() {
+
+				//clear our drawing
+				context.clearRect(0, 0, canvas.width, canvas.height);
+				//save the coordinate frame (in case we wanted to draw other things after the copters)
+				context.save();
+				//draw each copter
+				quadcopters.forEach(function(c) { c.draw(); })
+				//restore the coordinate frame (in case we wanted to draw other things)
+				context.restore();
+			}
+
+		});
+	</script>
+	</body>
+</html>
+
+//////////////////
+
+body {
+  background:
+   /* image */
+     top center / 200px 200px /* position / size */
+     no-repeat                /* repeat */
+     fixed                    /* attachment */
+     padding-box              /* origin */
+     content-box              /* clip */
+     black;                     /* color */
+}
